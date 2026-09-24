@@ -1,0 +1,41 @@
+{
+  "name": "modelsbom",
+  "version": "0.1.0",
+  "description": "Supply-chain security scanner for downloaded AI model files (PyTorch pickle, safetensors, GGUF) - a Software Bill of Materials style audit before you load a model.",
+  "license": "MIT",
+  "type": "commonjs",
+  "bin": {
+    "modelsbom": "dist/cli.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/cli.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "keywords": [
+    "security",
+    "sbom",
+    "pytorch",
+    "pickle",
+    "safetensors",
+    "gguf",
+    "llm",
+    "supply-chain"
+  ],
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}
