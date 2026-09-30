@@ -85,8 +85,28 @@ function main(): number {
   }
 
   const fileReports: FileReport[] = files.map((f) => {
-    const buf = fs.readFileSync(f);
-    return buildFileReport(f, buf);
+    try {
+      const buf = fs.readFileSync(f);
+      return buildFileReport(f, buf);
+    } catch (err) {
+      return {
+        path: f,
+        sizeBytes: 0,
+        result: {
+          format: "unknown",
+          verdict: "UNSUPPORTED",
+          findings: [
+            {
+              severity: "medium",
+              code: "FILE_READ_OR_SCAN_ERROR",
+              message: `Failed to read or scan "${f}": ${
+                err instanceof Error ? err.message : String(err)
+              }`,
+            },
+          ],
+        },
+      };
+    }
   });
 
   const report = buildScanReport(fileReports);
