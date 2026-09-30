@@ -115,16 +115,3 @@ export const OPCODES: OpcodeInfo[] = [
 export const OPCODE_BY_CODE: Map<number, OpcodeInfo> = new Map(
   OPCODES.map((o) => [o.code, o])
 );
-
-/** Opcodes that reference an external class/function/module by name. */
-export const GLOBAL_LIKE_OPCODES = new Set(["GLOBAL", "INST", "STACK_GLOBAL"]);
-
-/** Opcodes that actually invoke/instantiate a previously-referenced global. */
-export const INVOKE_OPCODES = new Set([
-  "REDUCE",
-  "NEWOBJ",
-  "NEWOBJ_EX",
-  "OBJ",
-  "INST",
-  "BUILD",
-]);

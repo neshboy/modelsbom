@@ -20,15 +20,41 @@ export interface AllowlistRule {
 
 export const ALLOWLIST: string[] = [
   // torch internals used to rebuild tensors/parameters/storages from a
-  // checkpoint - any function/class under the torch namespace.
-  "torch.*",
-  "torch._utils.*",
+  // checkpoint. Deliberately an explicit list of the specific callables
+  // real torch.save() output needs - NOT a "torch.*" wildcard, which would
+  // also allowlist known-dangerous torch entry points such as
+  // torch.ops.load_library and torch.hub.download_url_to_file (see
+  // DANGEROUS_QUALIFIED_NAMES below).
   "torch._utils._rebuild_tensor",
   "torch._utils._rebuild_tensor_v2",
   "torch._utils._rebuild_parameter",
   "torch._utils._rebuild_device_tensor_from_numpy",
-  "torch.storage.*",
-  "torch.serialization.*",
+  "torch.Size",
+
+  // Per-dtype storage classes referenced when unpickling tensor storages.
+  // Legacy (pre torch 2.x) names:
+  "torch.DoubleStorage",
+  "torch.FloatStorage",
+  "torch.HalfStorage",
+  "torch.LongStorage",
+  "torch.IntStorage",
+  "torch.ShortStorage",
+  "torch.CharStorage",
+  "torch.ByteStorage",
+  "torch.BoolStorage",
+  "torch.BFloat16Storage",
+  "torch.ComplexDoubleStorage",
+  "torch.ComplexFloatStorage",
+  "torch.QUInt8Storage",
+  "torch.QInt8Storage",
+  "torch.QInt32Storage",
+  "torch.QUInt4x2Storage",
+  "torch.QUInt2x4Storage",
+  // Modern (torch 2.x) names:
+  "torch.storage._TypedStorage",
+  "torch.storage.TypedStorage",
+  "torch.storage._UntypedStorage",
+  "torch.storage.UntypedStorage",
 
   // collections.OrderedDict is the standard container for state_dict()
   "collections.OrderedDict",
@@ -92,6 +118,22 @@ const DANGEROUS_BUILTIN_NAMES = new Set([
   "open",
 ]);
 
+/**
+ * Specific "module.qualname" callables that are dangerous even though they
+ * live inside an otherwise-trusted namespace (torch) that legitimately
+ * appears in every checkpoint. These are well-known code-execution / SSRF
+ * gadgets (native library loading, arbitrary URL download, TorchScript
+ * execution) and must be flagged as HIGH severity the same way the modules
+ * in DANGEROUS_MODULES are, rather than falling through to the generic
+ * "unknown global" medium-severity finding.
+ */
+export const DANGEROUS_QUALIFIED_NAMES = new Set([
+  "torch.ops.load_library",
+  "torch.hub.download_url_to_file",
+  "torch.hub.load_state_dict_from_url",
+  "torch.jit.load",
+]);
+
 function normalize(moduleName: string, qualName: string): string {
   return `${moduleName}.${qualName}`;
 }
@@ -111,6 +153,9 @@ export function isAllowlisted(moduleName: string, qualName: string): boolean {
 }
 
 export function isKnownDangerous(moduleName: string, qualName: string): boolean {
+  if (DANGEROUS_QUALIFIED_NAMES.has(normalize(moduleName, qualName))) {
+    return true;
+  }
   if (DANGEROUS_MODULES.has(moduleName)) {
     if (moduleName === "builtins" || moduleName === "__builtin__") {
       return DANGEROUS_BUILTIN_NAMES.has(qualName);

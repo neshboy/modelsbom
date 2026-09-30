@@ -24,7 +24,27 @@ export function scanPytorchFile(buf: Buffer): PytorchScanResult {
   const findings: Finding[] = [];
 
   if (isZip(buf)) {
-    const entries = listZipEntries(buf);
+    let entries;
+    try {
+      entries = listZipEntries(buf);
+    } catch (err) {
+      return {
+        format: "pytorch-pickle",
+        verdict: "INVALID",
+        pickleEntryName: "",
+        globalReferences: [],
+        findings: [
+          {
+            severity: "medium",
+            code: "PYTORCH_ZIP_PARSE_ERROR",
+            message: `Failed to parse ZIP structure: ${
+              err instanceof Error ? err.message : String(err)
+            }`,
+          },
+        ],
+        opcodeCount: 0,
+      };
+    }
     const pklEntry = entries.find((e) => e.name.endsWith("data.pkl"));
     if (!pklEntry) {
       return {
